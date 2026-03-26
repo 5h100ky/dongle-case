@@ -1,0 +1,51 @@
+/*
+ * Snake Dongle – Devicetree overlay
+ * Light-sensor (LDR) variant for Nice Nano v2 (nRF52840)
+ *
+ * Wiring
+ * ──────
+ *   LDR module VCC  → 3.3 V
+ *   LDR module GND  → GND
+ *   LDR module AO   → P0.02  (Nice Nano v2 pin A0 = AIN0)
+ *
+ * The LDR module contains a voltage divider; the AO pin outputs an analog
+ * voltage proportional to ambient illuminance. A higher raw ADC value
+ * means more light.
+ */
+
+/* ── Chosen peripherals ──────────────────────────────────────────────── */
+/ {
+    chosen {
+        zmk,backlight = &lcd_backlight;
+    };
+
+    /*
+     * light_sensor node – read by the auto-backlight behaviour module.
+     * The compatible string is resolved by firmware/src/light_sensor_backlight.c
+     */
+    light_sensor: light_sensor {
+        compatible      = "zmk,ldr-backlight";
+        io-channels     = <&adc 0>;
+        label           = "LIGHT_SENSOR";
+        /* brightness limits (0–100 %) */
+        min-brightness  = <10>;
+        max-brightness  = <100>;
+    };
+};
+
+/* ── ADC (SAADC on nRF52840) ─────────────────────────────────────────── */
+&adc {
+    status = "okay";
+    #address-cells = <1>;
+    #size-cells    = <0>;
+
+    channel@0 {
+        reg                      = <0>;
+        zephyr,gain              = "ADC_GAIN_1_6";
+        zephyr,reference         = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time  = <ADC_ACQ_TIME_DEFAULT>;
+        /* P0.02 = AIN0 on the nRF52840 */
+        zephyr,input-positive    = <NRF_SAADC_AIN0>;
+        zephyr,resolution        = <12>;
+    };
+};
